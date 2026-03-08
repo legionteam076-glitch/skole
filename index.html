@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="si" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Batch Watermark Pro - Powered by Evozi</title>
+    
+    <!-- Tailwind CSS with Dark Mode config -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Noto Sans Sinhala', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- JSZip -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            transition: background-color 0.3s, color 0.3s;
+        }
+        
+        .custom-file-upload {
+            border: 2px dashed #cbd5e1;
+            transition: all 0.3s ease;
+        }
+        .dark .custom-file-upload {
+            border-color: #4b5563;
+        }
+        
+        .custom-file-upload:hover {
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+        }
+        .dark .custom-file-upload:hover {
+            border-color: #3b82f6;
+            background-color: #1f2937;
+        }
+
+        /* Loader Animation */
+        .loader {
+            border-top-color: #3b82f6;
+            -webkit-animation: spinner 1.5s linear infinite;
+            animation: spinner 1.5s linear infinite;
+        }
+        @keyframes spinner {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Evozi Initial Loader */
+        #initialLoader {
+            transition: opacity 0.8s ease-out;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-200 min-h-screen flex flex-col">
+
+    <!-- Powered By Evozi Loading Screen -->
+    <div id="initialLoader" class="fixed inset-0 z-[100] bg-white dark:bg-gray-900 flex flex-col items-center justify-center">
+        <h1 class="text-4xl md:text-6xl font-black tracking-[0.2em] text-blue-600 animate-pulse">POWERED BY EVOZI</h1>
+        <div class="mt-8 w-16 h-1.5 bg-blue-600 rounded-full animate-bounce"></div>
+    </div>
+
+    <!-- Navigation Header -->
+    <nav class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center">
+                    <i class="fa-solid fa-layer-group text-blue-600 text-2xl mr-3"></i>
+                    <span class="font-bold text-xl tracking-tight text-gray-900 dark:text-white" data-i18n="mainTitle">Batch Watermark Pro</span>
+                </div>
+                <div class="flex items-center space-x-4 sm:space-x-6">
+                    <a href="#about" class="text-sm font-medium text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors" data-i18n="navAbout">අප ගැන (About Us)</a>
+                    
+                    <div class="h-6 w-px bg-gray-300 dark:bg-gray-600"></div> <!-- Divider -->
+                    
+                    <!-- Language Toggle -->
+                    <button id="langToggleBtn" class="text-sm font-bold text-gray-700 hover:text-blue-600 dark:text-gray-200 transition-colors w-8">
+                        EN
+                    </button>
+                    
+                    <!-- Theme Toggle -->
+                    <button id="themeToggleBtn" class="text-gray-500 hover:text-blue-600 dark:text-gray-300 transition-colors p-2 rounded-lg bg-gray-100 dark:bg-gray-700">
+                        <i class="fa-solid fa-moon text-lg" id="themeIcon"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-7xl mx-auto w-full p-4 sm:p-6 lg:p-8">
+        
+        <!-- Header Info -->
+        <div class="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+                <p class="text-gray-500 dark:text-gray-400 mt-1" data-i18n="mainDesc">ෆොටෝස් සියල්ලටම එකවර වෝටර්මාක් එකක් යොදා සම්මත ප්‍රමාණයට සකසන්න.</p>
+            </div>
+            <span class="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 text-xs font-semibold px-3 py-1.5 rounded-full inline-flex items-center border border-blue-200 dark:border-blue-800">
+                <i class="fa-solid fa-bolt mr-1.5"></i> <span data-i18n="clientSide">No Server Needed (Client-side)</span>
+            </span>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- Left Panel: Controls & Uploads -->
+            <div class="lg:col-span-4 space-y-6">
+                
+                <!-- Step 1: Upload Images -->
+                <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    <h2 class="text-base font-semibold mb-3 flex items-center text-gray-900 dark:text-white">
+                        <span class="bg-blue-600 text-white w-6 h-6 inline-flex justify-center items-center rounded-full text-xs mr-2">1</span>
+                        <span data-i18n="step1">පින්තූර තෝරන්න</span>
+                    </h2>
+                    <label class="custom-file-upload flex flex-col items-center justify-center w-full h-28 rounded-xl cursor-pointer bg-gray-50 dark:bg-gray-800/50">
+                        <i class="fa-solid fa-images text-2xl text-gray-400 mb-2"></i>
+                        <span class="text-sm text-gray-500 dark:text-gray-400 text-center px-2" id="imageCountText" data-i18n="imgPlaceholder">පින්තූර කිහිපයක් තෝරන්න</span>
+                        <input type="file" id="imageFiles" multiple accept="image/*" class="hidden" />
+                    </label>
+                </div>
+
+                <!-- Step 2: Upload Watermark -->
+                <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    <h2 class="text-base font-semibold mb-3 flex items-center text-gray-900 dark:text-white">
+                        <span class="bg-blue-600 text-white w-6 h-6 inline-flex justify-center items-center rounded-full text-xs mr-2">2</span>
+                        <span data-i18n="step2">වෝටර්මාක් එක (PNG)</span>
+                    </h2>
+                    <label class="custom-file-upload flex flex-col items-center justify-center w-full h-20 rounded-xl cursor-pointer bg-gray-50 dark:bg-gray-800/50">
+                        <i class="fa-solid fa-stamp text-xl text-gray-400 mb-1"></i>
+                        <span class="text-xs text-gray-500 dark:text-gray-400 text-center px-2" id="watermarkText" data-i18n="wmPlaceholder">වෝටර්මාක් එක තෝරන්න (Transparent PNG)</span>
+                        <input type="file" id="watermarkFile" accept="image/png" class="hidden" />
+                    </label>
+                </div>
+
+                <!-- Step 3: Layout Settings -->
+                <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    <h2 class="text-base font-semibold mb-4 flex items-center text-gray-900 dark:text-white">
+                        <span class="bg-blue-600 text-white w-6 h-6 inline-flex justify-center items-center rounded-full text-xs mr-2">3</span>
+                        <span data-i18n="step3">හැඩතල සැකසුම් (Layout)</span>
+                    </h2>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1" data-i18n="lblSize">අවශ්‍ය ප්‍රමාණය (Canvas Size)</label>
+                            <select id="canvasSize" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2 outline-none">
+                                <option value="1080x1080" data-i18n="sizeSq">Instagram Square (1080 x 1080)</option>
+                                <option value="1080x1350" data-i18n="sizePt">Instagram Portrait (1080 x 1350)</option>
+                                <option value="1920x1080" data-i18n="sizeLs">HD Landscape (1920 x 1080)</option>
+                                <option value="1080x1920" data-i18n="sizeSt">Story/Reel (1080 x 1920)</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1" data-i18n="lblPos">වෝටර්මාක් ස්ථානය (Position)</label>
+                            <select id="watermarkPosition" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2 outline-none">
+                                <option value="bottom-right" data-i18n="posBR">දකුණු පස පහළ (Bottom Right)</option>
+                                <option value="bottom-left" data-i18n="posBL">වම් පස පහළ (Bottom Left)</option>
+                                <option value="bottom-center" data-i18n="posBC">පහළ මැද (Bottom Center)</option>
+                                <option value="center" data-i18n="posC">හරියටම මැද (Center)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                <span data-i18n="lblScale">වෝටර්මාක් ප්‍රමාණය</span> (<span id="scaleVal">20</span>%)
+                            </label>
+                            <input type="range" id="watermarkScale" min="5" max="100" value="20" class="w-full h-1.5 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 4: Color Enhancements -->
+                <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    <h2 class="text-base font-semibold mb-4 flex items-center text-gray-900 dark:text-white">
+                        <span class="bg-blue-600 text-white w-6 h-6 inline-flex justify-center items-center rounded-full text-xs mr-2">4</span>
+                        <span data-i18n="step4">වර්ණ සැකසුම් (Color Editor)</span>
+                    </h2>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1 flex justify-between">
+                                <span data-i18n="lblBright">දීප්තිය (Brightness)</span>
+                                <span id="valBright" class="text-blue-500">100%</span>
+                            </label>
+                            <input type="range" id="filterBright" min="0" max="200" value="100" class="w-full h-1.5 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1 flex justify-between">
+                                <span data-i18n="lblCont">වර්ණ වෙනස (Contrast)</span>
+                                <span id="valCont" class="text-blue-500">100%</span>
+                            </label>
+                            <input type="range" id="filterCont" min="0" max="200" value="100" class="w-full h-1.5 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1 flex justify-between">
+                                <span data-i18n="lblSat">වර්ණ තීව්‍රතාව (Saturation)</span>
+                                <span id="valSat" class="text-blue-500">100%</span>
+                            </label>
+                            <input type="range" id="filterSat" min="0" max="200" value="100" class="w-full h-1.5 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Process Button -->
+                <button id="processBtn" class="w-full text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 font-medium rounded-xl text-base px-5 py-3.5 text-center transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-blue-500/30" disabled>
+                    <i class="fa-solid fa-download mr-2"></i> <span data-i18n="btnProcess">සකසා බාගත කරන්න (Download ZIP)</span>
+                </button>
+
+            </div>
+
+            <!-- Right Panel: Preview -->
+            <div class="lg:col-span-8 flex flex-col">
+                <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex-1 flex flex-col min-h-[500px]">
+                    <h2 class="text-base font-semibold mb-4 flex justify-between items-center text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-700 pb-3">
+                        <span data-i18n="previewTitle">පෙරදසුන (Live Preview)</span>
+                        <span id="previewStatus" class="text-xs font-normal text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2.5 py-1 rounded-md" data-i18n="previewNone">පින්තූර අප්ලෝඩ් කර නොමැත</span>
+                    </h2>
+                    
+                    <div class="flex-1 bg-[url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAAXNSR0IArs4c6QAAACVJREFUKFNjZCASMDKgAnv37v3PTEqB0dHRMJoYTbRAw4RGAx4AAOFKA14Wb4/yAAAAAElFTkSuQmCC')] dark:bg-[url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAAXNSR0IArs4c6QAAACVJREFUKFNjZCASMDKgArdv3/6fmZQCw8PDYTQxmmgBhgmNBjwAAPp5Axb48uLzAAAAAElFTkSuQmCC')] rounded-xl flex items-center justify-center overflow-hidden border border-gray-200 dark:border-gray-700 relative">
+                        <!-- Canvas for Preview -->
+                        <canvas id="previewCanvas" class="max-w-full max-h-full object-contain shadow-lg hidden"></canvas>
+                        
+                        <!-- Placeholder -->
+                        <div id="previewPlaceholder" class="text-center text-gray-400 dark:text-gray-500 bg-white/80 dark:bg-gray-800/80 p-6 rounded-2xl backdrop-blur-sm">
+                            <i class="fa-regular fa-image text-5xl mb-3 block"></i>
+                            <p class="text-sm" data-i18n="previewPlaceholder">පෙරදසුන බැලීම සඳහා පින්තූර ලබා දෙන්න</p>
+                        </div>
+
+                        <!-- Loading Overlay -->
+                        <div id="loadingOverlay" class="absolute inset-0 bg-white/90 dark:bg-gray-900/90 hidden flex-col items-center justify-center backdrop-blur-md z-10 transition-opacity">
+                            <div class="loader border-4 border-gray-200 dark:border-gray-700 rounded-full w-12 h-12 mb-4"></div>
+                            <p class="text-blue-600 dark:text-blue-400 font-semibold text-lg tracking-wide" id="loadingText" data-i18n="loading">සකසමින් පවතී...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col md:flex-row justify-between items-center text-sm text-gray-500 dark:text-gray-400">
+            <div class="mb-4 md:mb-0">
+                &copy; <span id="currentYear"></span> <span data-i18n="devName">Developer: Evozi</span>. All rights reserved.
+            </div>
+            <div class="flex space-x-6">
+                <a href="https://yourportfolio.com" target="_blank" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex items-center">
+                    <i class="fa-solid fa-briefcase mr-1.5"></i> <span data-i18n="portfolio">අපගේ නිර්මාණ (Portfolio)</span>
+                </a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // --- 1. INITIAL LOADER (EVOZI) ---
+        window.addEventListener('load', () => {
+            const loader = document.getElementById('initialLoader');
+            document.getElementById('currentYear').textContent = new Date().getFullYear();
+            
+            setTimeout(() => {
+                loader.style.opacity = '0';
+                setTimeout(() => loader.style.display = 'none', 800); // Wait for fade out
+            }, 1200); // Show loader for 1.2 seconds
+        });
+
+        // --- 2. DICTIONARY (TRANSLATIONS) ---
+        const translations = {
+            en: {
+                mainTitle: "Batch Watermark Pro",
+                navAbout: "About Us",
+                mainDesc: "Batch watermark your photos, edit colors and standardize sizes instantly.",
+                clientSide: "No Server Needed (Client-side)",
+                step1: "Select Images",
+                imgPlaceholder: "Select multiple images",
+                step2: "Watermark (PNG)",
+                wmPlaceholder: "Select watermark (Transparent PNG)",
+                step3: "Layout Settings",
+                lblSize: "Canvas Size",
+                sizeSq: "Instagram Square (1080 x 1080)",
+                sizePt: "Instagram Portrait (1080 x 1350)",
+                sizeLs: "HD Landscape (1920 x 1080)",
+                sizeSt: "Story/Reel (1080 x 1920)",
+                lblPos: "Watermark Position",
+                posBR: "Bottom Right",
+                posBL: "Bottom Left",
+                posBC: "Bottom Center",
+                posC: "Center",
+                lblScale: "Watermark Scale",
+                step4: "Color Editor",
+                lblBright: "Brightness",
+                lblCont: "Contrast",
+                lblSat: "Saturation",
+                btnProcess: "Process & Download (ZIP)",
+                previewTitle: "Live Preview",
+                previewNone: "No images uploaded",
+                previewPlaceholder: "Upload images to see preview",
+                loading: "Processing...",
+                devName: "Developer: Evozi",
+                portfolio: "Our Portfolio",
+                successMsg: "Success! All images have been downloaded as a ZIP."
+            },
+            si: {
+                mainTitle: "Batch Watermark Pro",
+                navAbout: "අප ගැන (About Us)",
+                mainDesc: "ෆොටෝස් සියල්ලටම එකවර වෝටර්මාක් එකක් යොදා සම්මත ප්‍රමාණයට සකසන්න.",
+                clientSide: "No Server Needed (Client-side)",
+                step1: "පින්තූර තෝරන්න",
+                imgPlaceholder: "පින්තූර කිහිපයක් තෝරන්න",
+                step2: "වෝටර්මාක් එක (PNG)",
+                wmPlaceholder: "වෝටර්මාක් එක තෝරන්න (Transparent PNG)",
+                step3: "හැඩතල සැකසුම් (Layout)",
+                lblSize: "අවශ්‍ය ප්‍රමාණය (Canvas Size)",
+                sizeSq: "Instagram Square (1080 x 1080)",
+                sizePt: "Instagram Portrait (1080 x 1350)",
+                sizeLs: "HD Landscape (1920 x 1080)",
+                sizeSt: "Story/Reel (1080 x 1920)",
+                lblPos: "වෝටර්මාක් ස්ථානය (Position)",
+                posBR: "දකුණු පස පහළ (Bottom Right)",
+                posBL: "වම් පස පහළ (Bottom Left)",
+                posBC: "පහළ මැද (Bottom Center)",
+                posC: "හරියටම මැද (Center)",
+                lblScale: "වෝටර්මාක් ප්‍රමාණය",
+                step4: "වර්ණ සැකසුම් (Color Editor)",
+                lblBright: "දීප්තිය (Brightness)",
+                lblCont: "වර්ණ වෙනස (Contrast)",
+                lblSat: "වර්ණ තීව්‍රතාව (Saturation)",
+                btnProcess: "සකසා බාගත කරන්න (Download ZIP)",
+                previewTitle: "පෙරදසුන (Live Preview)",
+                previewNone: "පින්තූර අප්ලෝඩ් කර නොමැත",
+                previewPlaceholder: "පෙරදසුන බැලීම සඳහා පින්තූර ලබා දෙන්න",
+                loading: "සකසමින් පවතී...",
+                devName: "සංවර්ධක: Evozi",
+                portfolio: "අපගේ නිර්මාණ (Portfolio)",
+                successMsg: "සාර්ථකයි! පින්තූර සියල්ල ZIP එකක් ලෙස බාගත විය."
+            }
+        };
+
+        // --- 3. STATE & APP LOGIC ---
+        let currentLang = localStorage.getItem('appLang') || 'si';
+        let isDarkMode = localStorage.getItem('appTheme') === 'dark';
+
+        // DOM Elements
+        const htmlEl = document.documentElement;
+        const themeBtn = document.getElementById('themeToggleBtn');
+        const themeIcon = document.getElementById('themeIcon');
+        const langBtn = document.getElementById('langToggleBtn');
+
+        const imageFilesInput = document.getElementById('imageFiles');
+        const watermarkFileInput = document.getElementById('watermarkFile');
+        const imageCountText = document.getElementById('imageCountText');
+        const watermarkText = document.getElementById('watermarkText');
+        const canvasSizeSelect = document.getElementById('canvasSize');
+        const watermarkPositionSelect = document.getElementById('watermarkPosition');
+        const watermarkScaleInput = document.getElementById('watermarkScale');
+        
+        // Color Filters Elements
+        const filterBright = document.getElementById('filterBright');
+        const filterCont = document.getElementById('filterCont');
+        const filterSat = document.getElementById('filterSat');
+        const valBright = document.getElementById('valBright');
+        const valCont = document.getElementById('valCont');
+        const valSat = document.getElementById('valSat');
+
+        const scaleValText = document.getElementById('scaleVal');
+        const processBtn = document.getElementById('processBtn');
+        const previewCanvas = document.getElementById('previewCanvas');
+        const previewPlaceholder = document.getElementById('previewPlaceholder');
+        const previewStatus = document.getElementById('previewStatus');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const loadingText = document.getElementById('loadingText');
+
+        const ctx = previewCanvas.getContext('2d');
+
+        let sourceImages = []; 
+        let firstImageObj = null; 
+        let watermarkImgObj = null; 
+
+        // --- 4. THEME & LANG INITIALIZATION ---
+        function applyTheme() {
+            if (isDarkMode) {
+                htmlEl.classList.add('dark');
+                themeIcon.classList.remove('fa-moon');
+                themeIcon.classList.add('fa-sun');
+            } else {
+                htmlEl.classList.remove('dark');
+                themeIcon.classList.remove('fa-sun');
+                themeIcon.classList.add('fa-moon');
+            }
+            localStorage.setItem('appTheme', isDarkMode ? 'dark' : 'light');
+        }
+
+        function applyLanguage() {
+            const t = translations[currentLang];
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (t[key]) {
+                    if(el.tagName === 'INPUT' && el.type === 'placeholder') {
+                        el.placeholder = t[key];
+                    } else {
+                        el.innerText = t[key];
+                    }
+                }
+            });
+            langBtn.innerText = currentLang === 'si' ? 'EN' : 'සිං';
+            localStorage.setItem('appLang', currentLang);
+            updateDynamicTexts();
+        }
+
+        function updateDynamicTexts() {
+            if (sourceImages.length > 0) {
+                imageCountText.innerText = currentLang === 'si' ? `පින්තූර ${sourceImages.length} ක් තෝරාගෙන ඇත` : `${sourceImages.length} images selected`;
+            } else {
+                imageCountText.innerText = translations[currentLang].imgPlaceholder;
+            }
+
+            if (watermarkImgObj && watermarkFileInput.files[0]) {
+                watermarkText.innerText = watermarkFileInput.files[0].name;
+            } else {
+                watermarkText.innerText = translations[currentLang].wmPlaceholder;
+            }
+            
+            if (firstImageObj) {
+                previewStatus.innerText = currentLang === 'si' ? "පළමු පින්තූරයේ පෙරදසුන" : "Preview of 1st image";
+            } else {
+                previewStatus.innerText = translations[currentLang].previewNone;
+            }
+        }
+
+        // Event Listeners for Theme/Lang
+        themeBtn.addEventListener('click', () => {
+            isDarkMode = !isDarkMode;
+            applyTheme();
+        });
+
+        langBtn.addEventListener('click', () => {
+            currentLang = currentLang === 'si' ? 'en' : 'si';
+            applyLanguage();
+        });
+
+        // Initialize UI
+        applyTheme();
+        applyLanguage();
+
+        // --- 5. EDITOR & UPLOAD LOGIC ---
+        
+        imageFilesInput.addEventListener('change', handleImageUpload);
+        watermarkFileInput.addEventListener('change', handleWatermarkUpload);
+        canvasSizeSelect.addEventListener('change', updatePreview);
+        watermarkPositionSelect.addEventListener('change', updatePreview);
+        
+        watermarkScaleInput.addEventListener('input', (e) => {
+            scaleValText.innerText = e.target.value;
+            updatePreview();
+        });
+
+        // Filters Event Listeners
+        [filterBright, filterCont, filterSat].forEach(input => {
+            input.addEventListener('input', () => {
+                valBright.innerText = filterBright.value + '%';
+                valCont.innerText = filterCont.value + '%';
+                valSat.innerText = filterSat.value + '%';
+                updatePreview();
+            });
+        });
+
+        processBtn.addEventListener('click', processAndDownload);
+
+        function handleImageUpload(e) {
+            sourceImages = Array.from(e.target.files);
+            updateDynamicTexts();
+            
+            if (sourceImages.length > 0) {
+                imageCountText.classList.add('text-blue-600', 'font-semibold', 'dark:text-blue-400');
+                loadImage(sourceImages[0]).then(img => {
+                    firstImageObj = img;
+                    updatePreview();
+                    checkReadyState();
+                });
+            } else {
+                imageCountText.classList.remove('text-blue-600', 'font-semibold', 'dark:text-blue-400');
+                firstImageObj = null;
+                updatePreview();
+                checkReadyState();
+            }
+        }
+
+        function handleWatermarkUpload(e) {
+            const file = e.target.files[0];
+            if (file) {
+                watermarkText.classList.add('text-blue-600', 'font-semibold', 'dark:text-blue-400');
+                loadImage(file).then(img => {
+                    watermarkImgObj = img;
+                    updatePreview();
+                    updateDynamicTexts();
+                    checkReadyState();
+                });
+            } else {
+                watermarkText.classList.remove('text-blue-600', 'font-semibold', 'dark:text-blue-400');
+                watermarkImgObj = null;
+                updatePreview();
+                updateDynamicTexts();
+                checkReadyState();
+            }
+        }
+
+        function checkReadyState() {
+            processBtn.disabled = !(sourceImages.length > 0 && watermarkImgObj);
+        }
+
+        function loadImage(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.onload = () => resolve(img);
+                    img.onerror = reject;
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function renderToCanvas(targetCanvas, targetCtx, mainImage, watermarkImg) {
+            const sizeArr = canvasSizeSelect.value.split('x');
+            const cWidth = parseInt(sizeArr[0]);
+            const cHeight = parseInt(sizeArr[1]);
+            
+            targetCanvas.width = cWidth;
+            targetCanvas.height = cHeight;
+
+            // Background
+            targetCtx.fillStyle = '#ffffff';
+            targetCtx.fillRect(0, 0, cWidth, cHeight);
+
+            // Draw Main Image with Filters
+            if (mainImage) {
+                const imgRatio = mainImage.width / mainImage.height;
+                const canvasRatio = cWidth / cHeight;
+                let drawWidth, drawHeight, offsetX, offsetY;
+
+                if (imgRatio > canvasRatio) {
+                    drawHeight = cHeight;
+                    drawWidth = mainImage.width * (cHeight / mainImage.height);
+                    offsetX = (cWidth - drawWidth) / 2;
+                    offsetY = 0;
+                } else {
+                    drawWidth = cWidth;
+                    drawHeight = mainImage.height * (cWidth / mainImage.width);
+                    offsetX = 0;
+                    offsetY = (cHeight - drawHeight) / 2;
+                }
+                
+                // Apply User Selected Color Filters
+                const b = filterBright.value;
+                const c = filterCont.value;
+                const s = filterSat.value;
+                targetCtx.filter = `brightness(${b}%) contrast(${c}%) saturate(${s}%)`;
+                
+                targetCtx.drawImage(mainImage, offsetX, offsetY, drawWidth, drawHeight);
+                
+                // Reset filter for watermark so it remains unaffected
+                targetCtx.filter = 'none'; 
+            }
+
+            // Draw Watermark
+            if (watermarkImg) {
+                const scale = parseInt(watermarkScaleInput.value) / 100;
+                const baseWmWidth = cWidth * scale;
+                const wmRatio = watermarkImg.height / watermarkImg.width;
+                const wmWidth = baseWmWidth;
+                const wmHeight = baseWmWidth * wmRatio;
+
+                const position = watermarkPositionSelect.value;
+                const padding = cWidth * 0.05;
+
+                let wmX = 0, wmY = 0;
+                switch(position) {
+                    case 'bottom-right': wmX = cWidth - wmWidth - padding; wmY = cHeight - wmHeight - padding; break;
+                    case 'bottom-left': wmX = padding; wmY = cHeight - wmHeight - padding; break;
+                    case 'bottom-center': wmX = (cWidth - wmWidth) / 2; wmY = cHeight - wmHeight - padding; break;
+                    case 'center': wmX = (cWidth - wmWidth) / 2; wmY = (cHeight - wmHeight) / 2; break;
+                }
+                
+                targetCtx.drawImage(watermarkImg, wmX, wmY, wmWidth, wmHeight);
+            }
+        }
+
+        function updatePreview() {
+            if (firstImageObj) {
+                previewPlaceholder.classList.add('hidden');
+                previewCanvas.classList.remove('hidden');
+                updateDynamicTexts();
+                renderToCanvas(previewCanvas, ctx, firstImageObj, watermarkImgObj);
+            } else {
+                previewPlaceholder.classList.remove('hidden');
+                previewCanvas.classList.add('hidden');
+                updateDynamicTexts();
+            }
+        }
+
+        async function processAndDownload() {
+            if (sourceImages.length === 0 || !watermarkImgObj) return;
+
+            processBtn.disabled = true;
+            loadingOverlay.classList.remove('hidden');
+            
+            const zip = new JSZip();
+            const folder = zip.folder("Watermarked_Images");
+
+            const offScreenCanvas = document.createElement('canvas');
+            const offScreenCtx = offScreenCanvas.getContext('2d');
+
+            for (let i = 0; i < sourceImages.length; i++) {
+                const file = sourceImages[i];
+                loadingText.innerText = currentLang === 'si' ? `සකසමින් පවතී: ${i + 1} / ${sourceImages.length}...` : `Processing: ${i + 1} / ${sourceImages.length}...`;
+                
+                try {
+                    const imgObj = await loadImage(file);
+                    renderToCanvas(offScreenCanvas, offScreenCtx, imgObj, watermarkImgObj);
+                    
+                    const dataUrl = offScreenCanvas.toDataURL('image/jpeg', 0.9);
+                    const base64Data = dataUrl.split(',')[1];
+                    const originalName = file.name.split('.')[0];
+                    const newFileName = `${originalName}_watermarked.jpg`;
+                    
+                    folder.file(newFileName, base64Data, {base64: true});
+                } catch (err) {
+                    console.error("Error processing image:", file.name, err);
+                }
+            }
+
+            loadingText.innerText = translations[currentLang].loading;
+
+            zip.generateAsync({type:"blob"}).then(function(content) {
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(content);
+                link.download = "Evozi_Watermarked_Photos.zip";
+                link.click();
+                
+                loadingOverlay.classList.add('hidden');
+                processBtn.disabled = false;
+                
+                setTimeout(() => alert(translations[currentLang].successMsg), 300);
+            });
+        }
+    </script>
+</body>
+</html>
